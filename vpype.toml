@@ -1,0 +1,11 @@
+[gwrite.json_mod]
+document_start = "{{"
+document_end = "}}\n"
+line_join = ","
+layer_join = ","
+layer_start = "\n\t\"Layer\": {{"
+layer_end = "\t}}\n"
+line_start = "\n\t\t\"Line{index:d}\": [\n"
+line_end = "\n\t\t]"
+segment = "\t\t{{\n\t\t\t\"X\": {x:.4f},\n\t\t\t\"Y\": {y:.4f}\n\t\t}},\n"
+segment_last = "\t\t{{\n\t\t\t\"X\": {x:.4f},\n\t\t\t\"Y\": {y:.4f}\n\t\t}}"
