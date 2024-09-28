@@ -4,10 +4,7 @@
 ezButton ySw1(21);
 ezButton ySw2(22);
 
-const float mAms = 0;
-
 void setup() {
-  mAms = 1 / (36 * pow(10, 5));
   // motor 1
   pinMode(12, OUTPUT);
   pinMode(13, OUTPUT);
@@ -22,7 +19,7 @@ void setup() {
 
 // states
 bool homed = false;
-bool dir1 = true;;
+bool dir1 = true;
 bool dir2 = true;
 bool go1 = true;
 bool go2 = true;
@@ -32,21 +29,12 @@ int i1 = 0;
 int i2 = 0;
 int i1top = 0;
 int i2top = 0;
-// power tracking
-float mAh = 0.0;
-int mA1t = 0;
-int mA2t = 0;
-int mA1 = 0;
-int mA2 = 0;
 
 // input reading
 int cur = 1;
 bool rCur = false;
 
 // stepper utils
-int mAhms2mAh(int mAhms) {
-  return mAhms
-}
 int *getSt(int motor = cur) {
   switch (motor) {
   case 2:
@@ -66,16 +54,12 @@ void pins(unsigned int motor, bool one, bool two, bool three, bool four) {
     digitalWrite(13, p2);
     digitalWrite(14, p3);
     digitalWrite(15, p4);
-    mAh += mAt1micros();
-    mA1 = (p1 + p2 + p3 + p4) * 70;
-    mAt1 = micros();
     break;
   case 2:
     digitalWrite(8, p1);
     digitalWrite(9, p2);
     digitalWrite(10, p3);
     digitalWrite(11, p4);
-    mA2 = (p1 + p2 + p3 + p4) * 70;
   }
 }
 void _step(unsigned int motor, bool dir = true) {
@@ -129,18 +113,21 @@ void step(int steps, unsigned int motor = 1, int del = 2) {
 void homeY() {
   // pull up circuit, all values are inverted
   // go to bottom
-  /*while (ySw1.getState() == HIGH) {
+  while (ySw1.getState() == HIGH) {
     step(1, 1);
+    Serial.println(ySw1.getState());
     ySw1.loop();
   }
   while (ySw1.getState() == LOW) {
     step(-5, 1);
+    Serial.println(ySw1.getState());
     ySw1.loop();
   }
   while (ySw1.getState() == HIGH) {
     step(1, 1, 6);
+    Serial.println(ySw1.getState());
     ySw1.loop();
-  }*/
+  }
   // go back up
   i1 = 0;
   while (ySw2.getState() == HIGH) {
@@ -169,13 +156,12 @@ void homeY() {
 void loop() {
   ySw1.loop();
   ySw2.loop();
-  //Serial.println(digitalRead(2));
   if (!homed) {
-    //homeY();
+    homeY();
     homed = true;
   }
-  Serial.println(ySw2.getState());
-  step(-1,1, 3);
+  Serial.println(ySw1.getState());
+  //step(-1,1, 3);
   bool ok = true;
   if (Serial.available()) {
     char ch = Serial.read();
