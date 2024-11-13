@@ -1,15 +1,50 @@
+#include <AccelStepper.h>
 #include <ezButton.h>
+// consts
 #define Y_DIST 250
+// pins
+#define Y_SW_BOTTOM 21
+#define Y_SW_TOP 22
+#define Y_MOTOR_1 12
+#define Y_MOTOR_2 13
+#define Y_MOTOR_3 14
+#define Y_MOTOR_4 15
 
-ezButton ySw1(21);
-ezButton ySw2(22);
+/*
+ * Output codes:
+ * P: Positioning info
+ *   P*F: fast
+ *   P*SD: slow (down/left)
+ *   P*SU: slow up (up/right)
+ *   Above, the * represents either X or Y
+ *   All P data will be the reported position (signed long)
+ * I: Info
+ *   Type: string (represents the info)
+ * E: Error
+ *   Type: string (represents the error)
+ */
+
+// switches
+ezButton ySw1(Y_SW_BOTTOM);
+ezButton ySw2(Y_SW_TOP);
+
+// states
+bool homed = false;
+//bool dir2 = true;
+bool go2 = true;
+int st2 = 0;
+int i2 = 0;
+int yTop = 0;
+
+// input reading
+//int cur = 1;
+//bool rCur = false;
+AccelStepper yMotor(4, Y_MOTOR_1, Y_MOTOR_3, Y_MOTOR_2, Y_MOTOR_4);
 
 void setup() {
   // motor 1
-  pinMode(12, OUTPUT);
-  pinMode(13, OUTPUT);
-  pinMode(14, OUTPUT);
-  pinMode(15, OUTPUT);
+  yMotor.enableOutputs();
+  yMotor.setMaxSpeed(1000);
   // limit switches
   ySw1.setDebounceTime(50);
   ySw2.setDebounceTime(50);
@@ -17,150 +52,71 @@ void setup() {
   Serial.begin(9600);
 }
 
-// states
-bool homed = false;
-bool dir1 = true;
-bool dir2 = true;
-bool go1 = true;
-bool go2 = true;
-int st1 = 0;
-int st2 = 0;
-int i1 = 0;
-int i2 = 0;
-int i1top = 0;
-int i2top = 0;
-
-// input reading
-int cur = 1;
-bool rCur = false;
-
-// stepper utils
-int *getSt(int motor = cur) {
-  switch (motor) {
-  case 2:
-    return &st2;
-  default:
-    return &st1;
-  }
-}
-void pins(unsigned int motor, bool one, bool two, bool three, bool four) {
-  int p1 = one ? HIGH : LOW;
-  int p2 =  two ? HIGH : LOW;
-  int p3 = three ? HIGH : LOW;
-  int p4 = four ? HIGH : LOW;
-  switch (motor) {
-  case 1:
-    digitalWrite(12, p1);
-    digitalWrite(13, p2);
-    digitalWrite(14, p3);
-    digitalWrite(15, p4);
-    break;
-  case 2:
-    digitalWrite(8, p1);
-    digitalWrite(9, p2);
-    digitalWrite(10, p3);
-    digitalWrite(11, p4);
-  }
-}
-void _step(unsigned int motor, bool dir = true) {
-  if (motor > 2 || motor < 1) Serial.println("err: invalid motor");
-  int *st = getSt(motor);
-  
-  switch (*st) {
-  case 0:
-    pins(motor, 0, 0, 0, 1);
-    break;
-  case 1:
-    pins(motor, 0, 0, 1, 1);
-    break;
-  case 2:
-    pins(motor, 0, 0, 1, 0);
-    break;
-  case 3:
-    pins(motor, 0, 1, 1, 0);
-    break;
-  case 4:
-    pins(motor, 0, 1, 0, 0);
-    break;
-  case 5:
-    pins(motor, 1, 1, 0, 0);
-    break;
-  case 6:
-    pins(motor, 1, 0, 0, 0);
-    break;
-  case 7:
-    pins(motor, 1, 0, 0, 1);
-    break;
-  default:
-    pins(motor, 0, 0, 0, 0);
-    break;
-  }
-  if (dir) (*st)++;
-  else (*st)--;
-  if (*st > 7) *st = 0;
-  if (*st < 0) *st = 7;
-}
-
-void step(int steps, unsigned int motor = 1, int del = 2) {
-  int total = abs(steps);
-  bool dir = steps < 0 ? false : true;
-  for (int i = 0; i < total;  i++) {
-    _step(motor, dir);
-    delay(del);
-  }
-}
-
 void homeY() {
   // pull up circuit, all values are inverted
   // go to bottom
-  while (ySw1.getState() == HIGH) {
-    step(1, 1);
-    Serial.println(ySw1.getState());
-    ySw1.loop();
+  int i = 0;
+  while (ySw1.loop(), ySw1.getState() == LOW) {
+    yMotor.setSpeed(-100);
+    yMotor.runSpeed();
+    Serial.print("PYSD:");
+    Serial.println(yMotor.currentPosition());
+    if (i % 100 == 0) Serial.println("I:Moving away from bottom limit");
+    i++;
   }
-  while (ySw1.getState() == LOW) {
-    step(-5, 1);
-    Serial.println(ySw1.getState());
-    ySw1.loop();
+  yMotor.setSpeed(-500);
+  while (ySw1.loop(), ySw1.getState() == HIGH) {
+    yMotor.runSpeed();
+    Serial.print("PYF:");
+    Serial.println(yMotor.currentPosition());
   }
-  while (ySw1.getState() == HIGH) {
-    step(1, 1, 6);
-    Serial.println(ySw1.getState());
-    ySw1.loop();
+  yMotor.setSpeed(500);
+  while (ySw1.loop(), ySw1.getState() == LOW) {
+    yMotor.runSpeed();
+    Serial.print("PYF:");
+    Serial.println(yMotor.currentPosition());
   }
+  yMotor.setSpeed(-100);
+  while (ySw1.loop(), ySw1.getState() == HIGH) {
+    yMotor.runSpeed();
+    Serial.print("PYSD:");
+    Serial.println(yMotor.currentPosition());
+  }
+  Serial.print("BOT:");
+  Serial.println(yMotor.currentPosition());
   // go back up
-  i1 = 0;
-  while (ySw2.getState() == HIGH) {
-    step(-1, 1);
-    i1++;
-    //Serial.println(ySw2.getState());
-    ySw2.loop();
+  i = 0;
+  while (ySw2.loop(), ySw2.getState() == LOW) {
+    delay(100);
+    if (i % 10) Serial.println("I:Waiting for limit switch to update");
   }
-  while (ySw2.getState() == LOW) {
-    step(5, 1);
-    i1 -= 5;
-    Serial.println(ySw2.getState());
-    ySw2.loop();
+  yMotor.setCurrentPosition(0);
+  yMotor.setSpeed(500);
+  while (ySw2.loop(), ySw2.getState() == HIGH) {
+    yMotor.runSpeed();
+    Serial.print("PYF:");
+    Serial.println(yMotor.currentPosition());
   }
-  while (ySw2.getState() == HIGH) {
-    step(-1, 1, 6);
-    i1++;
-    Serial.println(ySw2.getState());
-    ySw2.loop();
+  yMotor.setSpeed(-500);
+  while (ySw2.loop(), ySw2.getState() == LOW) {
+    yMotor.runSpeed();
+    Serial.print("PYF:");
+    Serial.println(yMotor.currentPosition());
   }
-  i1top = i1;
-  i1 = 0;
-  Serial.println(i1top);
+  yMotor.setSpeed(100);
+  while (ySw2.loop(), ySw2.getState() == HIGH) {
+    yMotor.runSpeed();
+    Serial.print("PYSU:");
+    Serial.println(yMotor.currentPosition());
+  }
+  yTop = yMotor.currentPosition();
+  Serial.print("TOP:");
+  Serial.println(yTop);
 }
 
 void loop() {
   ySw1.loop();
   ySw2.loop();
-  if (!homed) {
-    homeY();
-    homed = true;
-  }
-  Serial.println(ySw1.getState());
   //step(-1,1, 3);
   bool ok = true;
   if (Serial.available()) {

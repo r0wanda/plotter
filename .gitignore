@@ -3,3 +3,6 @@ yarn.lock
 dist
 venv
 .vscode
+out.gcode
+r.json
+out.json
