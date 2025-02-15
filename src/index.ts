@@ -1,5 +1,6 @@
 import load from './Loader.js';
 import Canvas from "./Canvas.js";
+import repl from 'node:repl';
 import Plotter, { delay } from './Plotter.js';
 import { writeFile } from "node:fs/promises";
 
@@ -9,6 +10,7 @@ const cv = new Canvas();
 await cv.draw(img.img);*/
 
 const pl = new Plotter(process.env.SERIAL?.trim(), process.env.BAUD?.trim());
+await pl.ready.wait(20000);
 
 process.on('SIGINT', () => {
     process.removeAllListeners('exit');
@@ -17,8 +19,5 @@ process.on('SIGINT', () => {
 });
 process.on('exit', pl.quit.bind(pl));
 
-console.log(await pl.home());
-delay(500);
-console.log(await pl.home());
-delay(500);
-console.log(await pl.home());
+const r = repl.start();
+r.context.pl = pl;

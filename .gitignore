@@ -6,3 +6,4 @@ venv
 out.gcode
 r.json
 out.json
+errfile

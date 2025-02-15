@@ -1,0 +1,21 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "cwd": "${workspaceRoot}",
+      "executable": "/home/rowan/.cache/arduino/sketches/80AD5D3D87E8D4E314B93D6355BEDF3B/pico.ino.elf",
+      "name": "Debug with OpenOCD",
+      "request": "launch",
+      "type": "cortex-debug",
+      "servertype": "external",
+      "gdbPath": "arm-none-eabi-gdb",
+      "gdbTarget": "localhost:3333",
+      "configFiles": ["/home/rowan/code/rpi/raspberrypi-swd.cfg", "/home/rowan/code/rpi/rp2040.cfg"],
+      "searchDir": [],
+      "runToEntryPoint": "main",
+      "showDevDebugOutput": "none"
+    }
+  ]
+}
